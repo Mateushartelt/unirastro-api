@@ -1,0 +1,23 @@
+{
+  "name": "unirastro-api",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "UNIRASTRO — API backend (Node/Express) do painel de rastreamento proativo",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "test": "tsx --test test/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "arch": "node scripts/check-architecture.mjs"
+  },
+  "dependencies": {
+    "express": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^24.19.2",
+    "tsx": "^4.23.15",
+    "typescript": "~6.0.2"
+  }
+}
