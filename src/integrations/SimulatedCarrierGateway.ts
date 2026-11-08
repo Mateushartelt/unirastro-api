@@ -9,48 +9,52 @@
  * de uma encomenda recem cadastrada devolve a postagem na origem.
  */
 
-import type { Order } from '../types';
+import type { Order, TrackingEvent } from '../types';
 import type { ICarrierTrackingGateway, TrackingUpdate } from '../repositories/ports';
+
+type Step = Pick<TrackingEvent, 'title' | 'place' | 'rawCode'> & { status: Order['status'] };
 
 export class SimulatedCarrierGateway implements ICarrierTrackingGateway {
   fetchUpdate(order: Order): TrackingUpdate | null {
-    if (order.status === 'Entregue') return null;
+    const step = nextStep(order);
+    if (!step) return null;
 
-    const at = new Date().toISOString();
-
-    if (order.timeline.every((e) => e.rawCode === 'LOCAL')) {
-      return {
-        event: { title: 'Objeto postado', place: order.origin, at, rawCode: 'PST' },
-        status: 'Postado',
-      };
-    }
-
-    const visited = new Set(order.timeline.map((e) => e.place));
-    const remaining = order.plannedRoute.filter((place) => !visited.has(place));
-
-    if (order.status === 'Saiu p/ entrega') {
-      return {
-        event: { title: 'Entregue', place: order.city, at, rawCode: 'DLV' },
-        status: 'Entregue',
-      };
-    }
-
-    if (remaining.length === 0 || remaining[remaining.length - 1] === order.city) {
-      if (visited.has(order.city)) {
-        return {
-          event: { title: 'Saiu para entrega', place: order.city, at, rawCode: 'OUT' },
-          status: 'Saiu p/ entrega',
-        };
-      }
-      return {
-        event: { title: 'Chegada na unidade de destino', place: order.city, at, rawCode: 'ARR' },
-        status: 'Em trânsito',
-      };
-    }
-
-    return {
-      event: { title: 'Objeto em trânsito', place: remaining[0], at, rawCode: 'TRN' },
-      status: 'Em trânsito',
-    };
+    const { status, ...event } = step;
+    return { event: { ...event, at: new Date().toISOString() }, status };
   }
+}
+
+function nextStep(order: Order): Step | null {
+  if (order.status === 'Entregue') return null;
+
+  if (order.timeline.every((e) => e.rawCode === 'LOCAL')) {
+    return { title: 'Objeto postado', place: order.origin, rawCode: 'PST', status: 'Postado' };
+  }
+
+  if (order.status === 'Saiu p/ entrega') {
+    return { title: 'Entregue', place: order.city, rawCode: 'DLV', status: 'Entregue' };
+  }
+
+  const visited = new Set(order.timeline.map((e) => e.place));
+  const remaining = order.plannedRoute.filter((place) => !visited.has(place));
+  const onlyDestinationLeft = remaining.length === 0 || remaining.at(-1) === order.city;
+
+  if (!onlyDestinationLeft) {
+    return { title: 'Objeto em trânsito', place: remaining[0], rawCode: 'TRN', status: 'Em trânsito' };
+  }
+
+  return arrivalStep(order.city, visited.has(order.city));
+}
+
+/** Perto do destino: chega na unidade e, na consulta seguinte, sai para entrega. */
+function arrivalStep(city: string, alreadyArrived: boolean): Step {
+  if (alreadyArrived) {
+    return { title: 'Saiu para entrega', place: city, rawCode: 'OUT', status: 'Saiu p/ entrega' };
+  }
+  return {
+    title: 'Chegada na unidade de destino',
+    place: city,
+    rawCode: 'ARR',
+    status: 'Em trânsito',
+  };
 }

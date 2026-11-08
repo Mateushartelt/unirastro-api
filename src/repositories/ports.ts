@@ -9,21 +9,13 @@
  * escrita (quem registra atividade) e outra de leitura (quem exibe status).
  */
 
-import type {
-  Anomaly,
-  Incident,
-  NotificationTrigger,
-  Order,
-  Tenant,
-  TenantId,
-  User,
-} from '../types';
+import type { Anomaly, Incident, NotificationTrigger, Order, Tenant, User } from '../types';
 
 /* ---------------------------- Repositorios ---------------------------- */
 
 export interface IOrderRepository {
-  listByTenant(tenantId: TenantId): Order[];
-  findByCode(tenantId: TenantId, code: string): Order | null;
+  listByTenant(tenantId: string): Order[];
+  findByCode(tenantId: string, code: string): Order | null;
   add(order: Order): void;
   update(order: Order): void;
 }
@@ -36,19 +28,19 @@ export interface ITriggerRepository {
 
 /** Incidentes de infraestrutura, os unicos que existem como registro e nao sao derivados. */
 export interface ISystemIncidentRepository {
-  listByTenant(tenantId: TenantId): Incident[];
+  listByTenant(tenantId: string): Incident[];
 }
 
 /** A decisao humana sobre incidentes: quais foram marcados como resolvidos. */
 export interface IIncidentResolutionRepository {
-  isResolved(tenantId: TenantId, id: string): boolean;
-  markResolved(tenantId: TenantId, id: string): void;
-  reopen(tenantId: TenantId, id: string): void;
+  isResolved(tenantId: string, id: string): boolean;
+  markResolved(tenantId: string, id: string): void;
+  reopen(tenantId: string, id: string): void;
 }
 
 export interface IUserDirectory {
   findByEmail(email: string): User | null;
-  findTenant(tenantId: TenantId): Tenant | null;
+  findTenant(tenantId: string): Tenant | null;
 }
 
 /** Contas de demonstracao exibidas na tela de login. */

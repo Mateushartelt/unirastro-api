@@ -10,8 +10,8 @@ export interface Api {
   close(): Promise<void>;
 }
 
-export async function startApi(alerts?: IAlertPublisher): Promise<Api> {
-  const app = createBackend({ tokenSecret: 'test-secret', alerts });
+export async function startApi(alerts?: IAlertPublisher, databaseFile?: string): Promise<Api> {
+  const app = createBackend({ tokenSecret: 'test-secret', alerts, databaseFile });
   const server = app.listen(0);
   await new Promise((resolve) => server.once('listening', resolve));
   const { port } = server.address() as AddressInfo;

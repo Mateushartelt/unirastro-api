@@ -19,7 +19,7 @@ import {
   validateNewOrder,
   type NewOrderInput,
 } from '../domain/orders/newOrder';
-import type { Order, OrderWithAnomalies, TenantId } from '../types';
+import type { Order, OrderWithAnomalies } from '../types';
 import type {
   IAlertPublisher,
   ICarrierTrackingGateway,
@@ -47,18 +47,18 @@ export class OrdersService {
     this.deps = deps;
   }
 
-  list(tenantId: TenantId): Result<OrderWithAnomalies[]> {
+  list(tenantId: string): Result<OrderWithAnomalies[]> {
     return success(this.deps.orders.listByTenant(tenantId).map((o) => this.enrich(o)));
   }
 
-  get(tenantId: TenantId, code: string): Result<OrderWithAnomalies> {
+  get(tenantId: string, code: string): Result<OrderWithAnomalies> {
     const order = this.deps.orders.findByCode(tenantId, code);
     if (!order) return this.notFound(code);
     return success(this.enrich(order));
   }
 
   /** Cadastro de encomenda (RF01), na ordem do diagrama de sequencia. */
-  create(tenantId: TenantId, input: NewOrderInput): Result<OrderWithAnomalies> {
+  create(tenantId: string, input: NewOrderInput): Result<OrderWithAnomalies> {
     const { orders, carriers, tracking, workers } = this.deps;
 
     // 1. detectarTransportadora(codigo) + validacao
@@ -89,7 +89,7 @@ export class OrdersService {
   }
 
   /** Consulta de status sob demanda (RF02). No sistema real quem faz isso e um worker. */
-  refresh(tenantId: TenantId, code: string): Result<OrderWithAnomalies> {
+  refresh(tenantId: string, code: string): Result<OrderWithAnomalies> {
     const { orders, tracking, workers } = this.deps;
 
     const order = orders.findByCode(tenantId, code);

@@ -10,11 +10,11 @@
  * deixar metodo vazio ou lancar "nao implementado" (LSP).
  */
 
-import type { Anomaly, AnomalyRuleName, Order } from '../../types';
+import type { Anomaly, Order } from '../../types';
 
 export interface AnomalyRule {
   /** Nome exibido na central e no detalhe da encomenda. */
-  readonly name: AnomalyRuleName;
+  readonly name: string;
 
   /**
    * Gatilho de notificacao (RF05) que governa o aviso ao cliente final desta regra, ou null

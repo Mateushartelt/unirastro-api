@@ -41,10 +41,7 @@ export class StalledInTransitRule implements AnomalyRule {
 
     const ratio = (stalledHours / AVERAGE_HUB_DWELL_HOURS).toFixed(1).replace('.', ',');
     const daysLeft = calendarDaysUntil(order.dueAt, now);
-    const deadline =
-      daysLeft <= 1
-        ? ` Prazo final ${daysLeft === 0 ? 'hoje' : 'em 1 dia'} — risco concreto de atraso.`
-        : '';
+    const deadline = deadlineWarning(daysLeft);
 
     return {
       rule: this.name,
@@ -56,4 +53,10 @@ export class StalledInTransitRule implements AnomalyRule {
         ' Recomendado acionar a transportadora antes de comunicar nova estimativa.',
     };
   }
+}
+
+function deadlineWarning(daysLeft: number): string {
+  if (daysLeft > 1) return '';
+  const when = daysLeft === 0 ? 'hoje' : 'em 1 dia';
+  return ` Prazo final ${when} — risco concreto de atraso.`;
 }

@@ -4,7 +4,7 @@
  * Recebe os dados iniciais pelo construtor: quem decide com o que semear e o composition root.
  */
 
-import type { Order, TenantId } from '../types';
+import type { Order } from '../types';
 import type { IOrderRepository } from './ports';
 
 export class InMemoryOrderRepository implements IOrderRepository {
@@ -14,11 +14,11 @@ export class InMemoryOrderRepository implements IOrderRepository {
     this.orders = structuredClone([...seed]);
   }
 
-  listByTenant(tenantId: TenantId): Order[] {
+  listByTenant(tenantId: string): Order[] {
     return this.orders.filter((o) => o.tenantId === tenantId);
   }
 
-  findByCode(tenantId: TenantId, code: string): Order | null {
+  findByCode(tenantId: string, code: string): Order | null {
     return this.orders.find((o) => o.tenantId === tenantId && o.code === code) ?? null;
   }
 

@@ -4,8 +4,9 @@ API do UNIRASTRO, SaaS multi-tenant de rastreamento proativo de encomendas. Aten
 [Aplicação Web](https://github.com/Mateushartelt/unirastro) (React/Vite), que fala com ela por
 REST/JSON.
 
-Node.js 22 + Express 5 + TypeScript. Nesta entrega os dados ficam em memória, semeados com os
-mesmos dados de demonstração do painel; PostgreSQL, fila, cache e worker são a próxima etapa.
+Node.js 22 + Express 5 + TypeScript. As encomendas ficam num banco SQLite (`data/unirastro.db`, criado e semeado
+na primeira execução; `DATABASE_FILE` muda o caminho). Os demais dados ficam em memória, semeados
+com os mesmos dados de demonstração do painel; PostgreSQL, fila, cache e worker são a próxima etapa.
 
 ## Como rodar
 
@@ -18,7 +19,9 @@ Para usar com o painel, suba a Aplicação Web com `VITE_API_URL=/api` (o Vite e
 para a porta 3333). As contas de demonstração estão em `GET /api/demo-accounts`.
 
 ```bash
-npm test           # integração HTTP + unidade (node:test)
+npm test                  # todos os testes (node:test)
+npm run test:unit         # regras de negócio, sem HTTP nem banco
+npm run test:integration  # SQLite real + requisições HTTP
 npm run typecheck
 npm run arch       # falha se algum import furar as camadas do C3
 ```
@@ -58,7 +61,7 @@ src/
   http/           app Express, envelope, token JWT (HS256), authenticate/authorize
   controllers/    traduzem HTTP <-> caso de uso; nenhuma regra de negócio
   application/    serviços de aplicação: só orquestram domínio + portas
-  repositories/   ports.ts (interfaces) + repositórios em memória
+  repositories/   ports.ts (interfaces) + repositórios em memória e SQLite (sqlite/)
   integrations/   transportadora simulada, publicador de alertas
   composition/    composition root: o único lugar que instancia classes concretas
   domain/         regras puras: anomalias, transportadoras, cadastro, incidentes, permissões

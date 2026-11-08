@@ -5,7 +5,7 @@
  * usada pela rota que lista as contas de teste na tela de login.
  */
 
-import type { Tenant, TenantId, User } from '../types';
+import type { Tenant, User } from '../types';
 import type { IDemoAccountDirectory, IUserDirectory } from './ports';
 
 export class InMemoryUserDirectory implements IUserDirectory, IDemoAccountDirectory {
@@ -22,7 +22,7 @@ export class InMemoryUserDirectory implements IUserDirectory, IDemoAccountDirect
     return this.users.find((u) => u.email.toLowerCase() === normalized) ?? null;
   }
 
-  findTenant(tenantId: TenantId): Tenant | null {
+  findTenant(tenantId: string): Tenant | null {
     return this.tenants.find((t) => t.id === tenantId) ?? null;
   }
 

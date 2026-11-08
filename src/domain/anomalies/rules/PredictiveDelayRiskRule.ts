@@ -29,14 +29,7 @@ export class PredictiveDelayRiskRule implements AnomalyRule {
     const daysLeft = calendarDaysUntil(order.dueAt, now);
     if (daysLeft > this.windowDays) return null;
 
-    const when = daysLeft < 0 ? 'venceu' : daysLeft === 0 ? 'vence hoje' : 'vence amanhã';
-
-    const situation =
-      daysLeft < 0
-        ? `Prazo vencido há ${Math.abs(daysLeft)} dia${Math.abs(daysLeft) === 1 ? '' : 's'}`
-        : daysLeft === 0
-          ? 'Prazo termina hoje'
-          : 'Prazo termina amanhã';
+    const { when, situation } = describeDeadline(daysLeft);
 
     return {
       rule: this.name,
@@ -47,4 +40,14 @@ export class PredictiveDelayRiskRule implements AnomalyRule {
         'Janela suficiente para avisar o cliente final com nova estimativa antes da reclamação.',
     };
   }
+}
+
+function describeDeadline(daysLeft: number): { when: string; situation: string } {
+  if (daysLeft < 0) {
+    const days = Math.abs(daysLeft);
+    const plural = days === 1 ? '' : 's';
+    return { when: 'venceu', situation: `Prazo vencido há ${days} dia${plural}` };
+  }
+  if (daysLeft === 0) return { when: 'vence hoje', situation: 'Prazo termina hoje' };
+  return { when: 'vence amanhã', situation: 'Prazo termina amanhã' };
 }

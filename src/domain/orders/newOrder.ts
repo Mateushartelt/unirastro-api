@@ -6,7 +6,7 @@
  * servico so orquestra: valida, monta, grava.
  */
 
-import type { Carrier, Order, TenantId } from '../../types';
+import type { Carrier, Order } from '../../types';
 import { normalizeCode } from '../carriers/CarrierDetector';
 import { deadlineInDays } from '../time';
 
@@ -66,7 +66,7 @@ export function validateNewOrder(
  * o requisito pede: quem cadastra cola o codigo e o sistema resolve o resto.
  */
 export function buildNewOrder(
-  tenantId: TenantId,
+  tenantId: string,
   input: NewOrderInput,
   carrier: Carrier,
   now: Date = new Date(),

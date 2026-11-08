@@ -61,7 +61,7 @@ export interface TrackingEvent {
 
 export interface Order {
   code: string;
-  tenantId: TenantId;
+  tenantId: string;
   carrier: Carrier;
   recipient: string;
   city: string;
@@ -92,15 +92,6 @@ export interface OrderWithAnomalies extends Order {
  * Anomalias e incidentes (RF04, RF06)
  * ------------------------------------------------------------------ */
 
-/**
- * Nome da regra que produziu a anomalia ("Parada prolongada", "Rota desviada"...).
- *
- * E texto aberto de proposito (OCP). Antes era uma uniao fechada, e criar uma regra nova
- * obrigava a editar este arquivo. Agora cada regra declara o proprio nome em
- * domain/anomalies/rules, e o modelo nao precisa conhecer a lista.
- */
-export type AnomalyRuleName = string;
-
 /** Tipo dos incidentes de infraestrutura, que nao nascem de nenhuma regra de encomenda. */
 export const SYSTEM_INCIDENT_KIND = 'Webhook indisponível';
 
@@ -110,7 +101,7 @@ export type Severity = (typeof SEVERITIES)[number];
 
 /** O que uma regra de anomalia produz ao analisar uma encomenda. */
 export interface Anomaly {
-  rule: AnomalyRuleName;
+  rule: string;
   severity: Severity;
   title: string;
   description: string;
@@ -119,7 +110,7 @@ export interface Anomaly {
 /** Uma anomalia promovida a item da central de incidentes. */
 export interface Incident extends Anomaly {
   id: string;
-  tenantId: TenantId;
+  tenantId: string;
   /** Codigo da encomenda, ou null para incidentes de infraestrutura. */
   code: string | null;
   carrier: Carrier;
@@ -149,16 +140,8 @@ export const ROLES = ['Admin', 'Operador de Logística', 'Suporte'] as const;
 
 export type Role = (typeof ROLES)[number];
 
-/**
- * Identificador da empresa cliente.
- *
- * Antes era a uniao dos dois tenants dos mocks, o que amarrava o modelo de dominio aos dados
- * simulados: cadastrar uma empresa nova exigiria editar este arquivo.
- */
-export type TenantId = string;
-
 export interface Tenant {
-  id: TenantId;
+  id: string;
   name: string;
 }
 
@@ -168,7 +151,7 @@ export interface User {
   email: string;
   password: string;
   role: Role;
-  tenantId: TenantId;
+  tenantId: string;
 }
 
 /** O usuario como as telas o enxergam, ja sem a senha. */

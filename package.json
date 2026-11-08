@@ -7,9 +7,11 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "start": "tsx src/server.ts",
-    "test": "tsx --test test/*.test.ts",
+    "test": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/*.test.ts",
     "typecheck": "tsc --noEmit",
-    "arch": "node scripts/check-architecture.mjs"
+    "arch": "node scripts/check-architecture.mjs",
+    "test:unit": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/businessRules.test.ts test/ordersService.test.ts",
+    "test:integration": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/sqliteOrderRepository.test.ts test/api.test.ts"
   },
   "dependencies": {
     "express": "^5.3.0"

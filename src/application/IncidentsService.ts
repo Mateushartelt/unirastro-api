@@ -8,7 +8,7 @@
 import type { AnomalyDetector } from '../domain/anomalies/AnomalyDetector';
 import { compareIncidents, incidentsFromOrder } from '../domain/incidents/incidents';
 import type { NotificationPolicy } from '../domain/incidents/NotificationPolicy';
-import type { Incident, TenantId } from '../types';
+import type { Incident } from '../types';
 import type {
   IIncidentResolutionRepository,
   IOrderRepository,
@@ -33,7 +33,7 @@ export class IncidentsService {
     this.deps = deps;
   }
 
-  list(tenantId: TenantId): Result<Incident[]> {
+  list(tenantId: string): Result<Incident[]> {
     const { orders, systemIncidents, resolutions, triggers, anomalies, notifications } = this.deps;
 
     const now = new Date();
@@ -55,12 +55,12 @@ export class IncidentsService {
     return success([...derived, ...system].sort(compareIncidents));
   }
 
-  resolve(tenantId: TenantId, id: string): Result<null> {
+  resolve(tenantId: string, id: string): Result<null> {
     this.deps.resolutions.markResolved(tenantId, id);
     return success(null, 'Incidente marcado como resolvido');
   }
 
-  reopen(tenantId: TenantId, id: string): Result<null> {
+  reopen(tenantId: string, id: string): Result<null> {
     this.deps.resolutions.reopen(tenantId, id);
     return success(null, 'Incidente reaberto');
   }

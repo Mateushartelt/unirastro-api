@@ -9,11 +9,11 @@
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';
-import type { Role, TenantId } from '../types';
+import type { Role } from '../types';
 
 export interface AuthClaims {
   userId: string;
-  tenantId: TenantId;
+  tenantId: string;
   role: Role;
 }
 

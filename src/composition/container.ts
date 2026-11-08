@@ -3,7 +3,7 @@
  *
  * Aqui se decide quais regras de anomalia existem, de onde vem cada dado e qual implementacao
  * atende cada porta. Controllers recebem servicos; servicos recebem portas. Trocar memoria por
- * PostgreSQL, ou a transportadora simulada pela API dos Correios, acontece neste arquivo.
+ * SQLite/PostgreSQL, ou a transportadora simulada pela API dos Correios, acontece neste arquivo.
  *
  * Para criar uma regra de anomalia nova: escrever a classe em src/domain/anomalies/rules e
  * acrescenta-la em ANOMALY_RULES abaixo. So isso.
@@ -42,7 +42,9 @@ import { InMemorySystemIncidentRepository } from '../repositories/InMemorySystem
 import { InMemoryTriggerRepository } from '../repositories/InMemoryTriggerRepository';
 import { InMemoryUserDirectory } from '../repositories/InMemoryUserDirectory';
 import { InMemoryWorkerMonitor } from '../repositories/InMemoryWorkerMonitor';
-import type { IAlertPublisher } from '../repositories/ports';
+import type { IAlertPublisher, IOrderRepository } from '../repositories/ports';
+import { openDatabase } from '../repositories/sqlite/database';
+import { SqliteOrderRepository } from '../repositories/sqlite/SqliteOrderRepository';
 
 /** Regras de anomalia ativas (RF04): as estrategias que o AnomalyDetector executa. */
 const ANOMALY_RULES: readonly AnomalyRule[] = [
@@ -56,57 +58,71 @@ export interface BackendOptions {
   tokenSecret: string;
   /** Permite aos testes observar os alertas publicados. */
   alerts?: IAlertPublisher;
+  /** Arquivo SQLite das encomendas. Sem ele, as encomendas ficam so em memoria. */
+  databaseFile?: string;
+}
+
+function createDomain() {
+  return {
+    anomalies: new AnomalyDetector(ANOMALY_RULES),
+    notifications: new NotificationPolicy(ANOMALY_RULES),
+    carriers: new CarrierDetector(CARRIER_PATTERNS),
+  };
+}
+
+function createOrderRepository(databaseFile?: string): IOrderRepository {
+  if (!databaseFile) return new InMemoryOrderRepository(MOCK_ORDERS);
+  return new SqliteOrderRepository(openDatabase(databaseFile), MOCK_ORDERS);
+}
+
+function createRepositories(options: BackendOptions) {
+  return {
+    orders: createOrderRepository(options.databaseFile),
+    triggers: new InMemoryTriggerRepository(MOCK_TRIGGERS),
+    systemIncidents: new InMemorySystemIncidentRepository(MOCK_SYSTEM_INCIDENTS),
+    resolutions: new InMemoryIncidentResolutionRepository(
+      MOCK_SYSTEM_INCIDENTS.filter((i) => i.resolved),
+    ),
+    workers: new InMemoryWorkerMonitor({ lastSyncAt: new Date(), queueSize: 128 }),
+    users: new InMemoryUserDirectory(MOCK_USERS, MOCK_TENANTS),
+  };
+}
+
+function createServices(options: BackendOptions) {
+  const domain = createDomain();
+  const repos = createRepositories(options);
+
+  const orders = new OrdersService({
+    ...domain,
+    orders: repos.orders,
+    triggers: repos.triggers,
+    workers: repos.workers,
+    tracking: new SimulatedCarrierGateway(),
+    alerts: options.alerts ?? new ConsoleAlertPublisher(),
+  });
+  const incidents = new IncidentsService({
+    orders: repos.orders,
+    systemIncidents: repos.systemIncidents,
+    resolutions: repos.resolutions,
+    triggers: repos.triggers,
+    anomalies: domain.anomalies,
+    notifications: domain.notifications,
+  });
+
+  return { repos, orders, incidents };
 }
 
 export function createBackend(options: BackendOptions) {
-  // Dominio
-  const anomalyDetector = new AnomalyDetector(ANOMALY_RULES);
-  const notificationPolicy = new NotificationPolicy(ANOMALY_RULES);
-  const carrierDetector = new CarrierDetector(CARRIER_PATTERNS);
-
-  // Repositorios
-  const orderRepository = new InMemoryOrderRepository(MOCK_ORDERS);
-  const triggerRepository = new InMemoryTriggerRepository(MOCK_TRIGGERS);
-  const systemIncidentRepository = new InMemorySystemIncidentRepository(MOCK_SYSTEM_INCIDENTS);
-  const resolutionRepository = new InMemoryIncidentResolutionRepository(
-    MOCK_SYSTEM_INCIDENTS.filter((i) => i.resolved),
-  );
-  const workerMonitor = new InMemoryWorkerMonitor({ lastSyncAt: new Date(), queueSize: 128 });
-  const userDirectory = new InMemoryUserDirectory(MOCK_USERS, MOCK_TENANTS);
-
-  // Integracoes
-  const carrierGateway = new SimulatedCarrierGateway();
-  const alertPublisher = options.alerts ?? new ConsoleAlertPublisher();
-
-  // Servicos de aplicacao
-  const ordersService = new OrdersService({
-    orders: orderRepository,
-    triggers: triggerRepository,
-    tracking: carrierGateway,
-    alerts: alertPublisher,
-    workers: workerMonitor,
-    anomalies: anomalyDetector,
-    carriers: carrierDetector,
-    notifications: notificationPolicy,
-  });
-  const incidentsService = new IncidentsService({
-    orders: orderRepository,
-    systemIncidents: systemIncidentRepository,
-    resolutions: resolutionRepository,
-    triggers: triggerRepository,
-    anomalies: anomalyDetector,
-    notifications: notificationPolicy,
-  });
-
-  // HTTP
+  const { repos, orders, incidents } = createServices(options);
   const signer = new TokenSigner(options.tokenSecret);
+
   return createApp(
     {
-      auth: new AuthController(new AuthService(userDirectory), signer, userDirectory),
-      orders: new OrdersController(ordersService),
-      incidents: new IncidentsController(incidentsService),
-      triggers: new TriggersController(new TriggersService(triggerRepository)),
-      workers: new WorkersController(new WorkerStatusService(workerMonitor)),
+      auth: new AuthController(new AuthService(repos.users), signer, repos.users),
+      orders: new OrdersController(orders),
+      incidents: new IncidentsController(incidents),
+      triggers: new TriggersController(new TriggersService(repos.triggers)),
+      workers: new WorkersController(new WorkerStatusService(repos.workers)),
     },
     signer,
   );
