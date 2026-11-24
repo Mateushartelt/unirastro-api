@@ -143,6 +143,8 @@ describe('RF10 · permissoes por papel', () => {
     assert.equal(hasPermission('Suporte', 'resolveIncidents'), true);
     assert.equal(hasPermission('Suporte', 'createOrders'), false);
     assert.equal(hasPermission('Suporte', 'editTriggers'), false);
+    assert.equal(hasPermission('Suporte', 'deleteOrders'), false);
+    assert.equal(hasPermission('Operador de Logística', 'deleteOrders'), true);
     assert.equal(hasPermission('Operador de Logística', 'createOrders'), true);
   });
 });

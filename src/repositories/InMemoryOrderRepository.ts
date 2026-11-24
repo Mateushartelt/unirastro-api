@@ -32,4 +32,10 @@ export class InMemoryOrderRepository implements IOrderRepository {
       o.tenantId === order.tenantId && o.code === order.code ? order : o,
     );
   }
+
+  remove(tenantId: string, code: string): boolean {
+    const before = this.orders.length;
+    this.orders = this.orders.filter((o) => !(o.tenantId === tenantId && o.code === code));
+    return this.orders.length < before;
+  }
 }

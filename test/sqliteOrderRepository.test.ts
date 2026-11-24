@@ -73,6 +73,21 @@ describe('SqliteOrderRepository (banco real)', () => {
     assert.equal(withRepository((repo) => repo.findByCode('outra-empresa', 'AA000000001BR')), null);
   });
 
+  test('apagar remove so a encomenda da empresa certa e libera o codigo', () => {
+    withRepository((repo) => {
+      repo.add(makeOrder());
+      repo.add(makeOrder({ tenantId: 'outra-empresa' }));
+    });
+
+    assert.equal(withRepository((repo) => repo.remove('tenant-teste', 'AB123456789BR')), true);
+    assert.equal(withRepository((repo) => repo.remove('tenant-teste', 'AB123456789BR')), false);
+    assert.equal(withRepository((repo) => repo.findByCode('tenant-teste', 'AB123456789BR')), null);
+    assert.ok(withRepository((repo) => repo.findByCode('outra-empresa', 'AB123456789BR')));
+
+    withRepository((repo) => repo.add(makeOrder()));
+    assert.ok(withRepository((repo) => repo.findByCode('tenant-teste', 'AB123456789BR')));
+  });
+
   test('o banco recusa o mesmo codigo duas vezes na mesma empresa', () => {
     withRepository((repo) => {
       repo.add(makeOrder());
