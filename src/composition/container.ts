@@ -103,15 +103,25 @@ function createTrackingGateway(mode: BackendOptions['carriers']): ICarrierTracki
   return new DemoAwareCarrierGateway(createRealCarrierGateway(), simulated, MOCK_ORDERS.map((o) => o.code));
 }
 
+/**
+ * Dados de infraestrutura de demonstracao (incidentes de webhook, fila de 128 eventos) so no
+ * modo simulado. No modo real nao existe webhook nem fila ainda, entao a central e a barra
+ * lateral mostram so o que de fato aconteceu.
+ */
+function createInfrastructureSeed(mode: BackendOptions['carriers']) {
+  if (mode === 'real') return { systemIncidents: [], queueSize: 0 };
+  return { systemIncidents: MOCK_SYSTEM_INCIDENTS, queueSize: 128 };
+}
+
 function createRepositories(options: BackendOptions) {
+  const { systemIncidents, queueSize } = createInfrastructureSeed(options.carriers);
+
   return {
     orders: createOrderRepository(options.databaseFile),
     triggers: new InMemoryTriggerRepository(MOCK_TRIGGERS),
-    systemIncidents: new InMemorySystemIncidentRepository(MOCK_SYSTEM_INCIDENTS),
-    resolutions: new InMemoryIncidentResolutionRepository(
-      MOCK_SYSTEM_INCIDENTS.filter((i) => i.resolved),
-    ),
-    workers: new InMemoryWorkerMonitor({ lastSyncAt: new Date(), queueSize: 128 }),
+    systemIncidents: new InMemorySystemIncidentRepository(systemIncidents),
+    resolutions: new InMemoryIncidentResolutionRepository(systemIncidents.filter((i) => i.resolved)),
+    workers: new InMemoryWorkerMonitor({ lastSyncAt: new Date(), queueSize }),
     users: new InMemoryUserDirectory(MOCK_USERS, MOCK_TENANTS),
   };
 }

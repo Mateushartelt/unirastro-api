@@ -163,3 +163,19 @@ describe('incidentes e gatilhos', () => {
     assert.equal(json.data.find((t: { id: string }) => t.id === 'route').enabled, true);
   });
 });
+
+describe('modo real (sem dados inventados de infraestrutura)', () => {
+  test('nao ha incidente de webhook nem fila ficticia', async () => {
+    const real = await startApi({ publish: () => {} }, undefined, 'real');
+    try {
+      const token = await real.login('marina@aurora.com.br', 'operador');
+      const incidents = await real.call('GET', '/incidentes', undefined, token);
+      assert.equal(incidents.json.data.filter((i: { code: string | null }) => i.code === null).length, 0);
+
+      const workers = await real.call('GET', '/workers/status', undefined, token);
+      assert.equal(workers.json.data.queueSize, 0);
+    } finally {
+      await real.close();
+    }
+  });
+});
