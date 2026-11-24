@@ -70,12 +70,12 @@ describe('encomendas', () => {
     const { status, json } = await api.call(
       'POST',
       '/encomendas',
-      { code: ' ab123456789br ', recipient: 'Ana Souza', city: 'Curitiba, PR' },
+      { code: ' br123456789012a ', recipient: 'Ana Souza', city: 'Curitiba, PR' },
       marina,
     );
     assert.equal(status, 201);
-    assert.equal(json.data.code, 'AB123456789BR');
-    assert.equal(json.data.carrier, 'Correios');
+    assert.equal(json.data.code, 'BR123456789012A');
+    assert.equal(json.data.carrier, 'Shopee Xpress');
     assert.equal(json.data.timeline[0].title, 'Objeto postado');
   });
 
@@ -94,7 +94,7 @@ describe('encomendas', () => {
     const { status, json } = await api.call(
       'POST',
       '/encomendas',
-      { code: 'NL482913776BR', recipient: 'Ana', city: '' },
+      { code: '10084531275940', recipient: 'Ana', city: '' },
       marina,
     );
     assert.equal(status, 400);
@@ -106,20 +106,20 @@ describe('encomendas', () => {
     const { status } = await api.call(
       'POST',
       '/encomendas',
-      { code: 'CD123456789BR', recipient: 'Ana', city: '' },
+      { code: 'BR111111111111A', recipient: 'Ana', city: '' },
       tais,
     );
     assert.equal(status, 403);
   });
 
   test('operador apaga a encomenda; ela some e o codigo volta a ser aceito', async () => {
-    const order = { code: 'EF123456789BR', recipient: 'Ana', city: '' };
+    const order = { code: 'BR222222222222A', recipient: 'Ana', city: '' };
     await api.call('POST', '/encomendas', order, marina);
 
-    const { status, json } = await api.call('DELETE', '/encomendas/EF123456789BR', undefined, marina);
+    const { status, json } = await api.call('DELETE', '/encomendas/BR222222222222A', undefined, marina);
     assert.equal(status, 200);
-    assert.equal(json.message, 'Encomenda EF123456789BR apagada.');
-    assert.equal((await api.call('GET', '/encomendas/EF123456789BR', undefined, marina)).status, 404);
+    assert.equal(json.message, 'Encomenda BR222222222222A apagada.');
+    assert.equal((await api.call('GET', '/encomendas/BR222222222222A', undefined, marina)).status, 404);
     assert.equal((await api.call('POST', '/encomendas', order, marina)).status, 201);
   });
 

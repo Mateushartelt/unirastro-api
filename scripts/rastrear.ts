@@ -1,7 +1,7 @@
 /**
  * Consulta um codigo de rastreio na transportadora real, sem subir a API.
  *
- *   npm run rastrear -- AA123456789BR
+ *   npm run rastrear -- BR262730058243Y
  *
  * Usa as mesmas pecas da API: o CarrierDetector identifica a transportadora e o gateway real
  * do composition root (Shopee Xpress ou Melhor Rastreio) faz a consulta de verdade.
