@@ -91,12 +91,9 @@ describe('encomendas', () => {
   });
 
   test('codigo duplicado devolve 400', async () => {
-    const { status, json } = await api.call(
-      'POST',
-      '/encomendas',
-      { code: '10084531275940', recipient: 'Ana', city: '' },
-      marina,
-    );
+    const order = { code: 'BR555555555555A', recipient: 'Ana', city: '' };
+    assert.equal((await api.call('POST', '/encomendas', order, marina)).status, 201);
+    const { status, json } = await api.call('POST', '/encomendas', order, marina);
     assert.equal(status, 400);
     assert.equal(json.message, 'Código duplicado.');
   });
@@ -164,5 +161,21 @@ describe('incidentes e gatilhos', () => {
     const { status, json } = await api.call('PATCH', '/gatilhos/route', undefined, marina);
     assert.equal(status, 200);
     assert.equal(json.data.find((t: { id: string }) => t.id === 'route').enabled, true);
+  });
+});
+
+describe('modo real (sem dados inventados de infraestrutura)', () => {
+  test('nao ha incidente de webhook nem fila ficticia', async () => {
+    const real = await startApi({ publish: () => {} }, undefined, 'real');
+    try {
+      const token = await real.login('marina@aurora.com.br', 'operador');
+      const incidents = await real.call('GET', '/incidentes', undefined, token);
+      assert.equal(incidents.json.data.filter((i: { code: string | null }) => i.code === null).length, 0);
+
+      const workers = await real.call('GET', '/workers/status', undefined, token);
+      assert.equal(workers.json.data.queueSize, 0);
+    } finally {
+      await real.close();
+    }
   });
 });

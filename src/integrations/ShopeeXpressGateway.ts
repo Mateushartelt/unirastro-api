@@ -2,9 +2,9 @@
  * Rastreio real (RF02) da Shopee Xpress, a entrega propria da Shopee.
  *
  * Usa o mesmo endpoint publico que a pagina de rastreio spx.com.br consulta. Nao exige chave.
- * O Melhor Rastreio nao cobre a Shopee Xpress, por isso ela tem integracao propria.
  *
- * Como o MelhorRastreioGateway, devolve so os eventos que a encomenda ainda nao tem.
+ * Devolve so os eventos que a encomenda ainda nao tem, para o OrdersService poder consultar
+ * quantas vezes quiser sem duplicar a linha do tempo.
  */
 
 import type { Order, OrderStatus, TrackingEvent } from '../types';

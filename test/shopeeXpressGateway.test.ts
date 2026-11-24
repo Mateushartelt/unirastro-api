@@ -7,6 +7,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { describe, test } from 'node:test';
 import { CarrierRouterGateway } from '../src/integrations/CarrierRouterGateway';
+import { DemoAwareCarrierGateway } from '../src/integrations/DemoAwareCarrierGateway';
+import { UntrackedCarrierGateway } from '../src/integrations/UntrackedCarrierGateway';
 import { ShopeeXpressGateway, type SpxResponse } from '../src/integrations/ShopeeXpressGateway';
 import { CarrierDetector } from '../src/domain/carriers/CarrierDetector';
 import { CARRIER_PATTERNS } from '../src/domain/carriers/carrierPatterns';
@@ -91,5 +93,28 @@ describe('CarrierRouterGateway', () => {
     await router.fetchUpdate(order());
     await router.fetchUpdate(order({ carrier: 'Correios', code: 'AB123456789BR' }));
     assert.deepEqual(used, ['spx', 'agregador']);
+  });
+});
+
+describe('DemoAwareCarrierGateway', () => {
+  test('codigos da demonstracao ficam no simulado; o resto vai para a API real', async () => {
+    const used: string[] = [];
+    const named = (name: string): ICarrierTrackingGateway => ({
+      fetchUpdate: async () => {
+        used.push(name);
+        return null;
+      },
+    });
+    const gateway = new DemoAwareCarrierGateway(named('real'), named('demo'), ['QB000000000BR']);
+
+    await gateway.fetchUpdate(order({ code: 'QB000000000BR' }));
+    await gateway.fetchUpdate(order());
+    assert.deepEqual(used, ['demo', 'real']);
+  });
+});
+
+describe('UntrackedCarrierGateway', () => {
+  test('transportadora sem integracao real nunca traz movimentacao', async () => {
+    assert.equal(await new UntrackedCarrierGateway().fetchUpdate(), null);
   });
 });

@@ -40,18 +40,17 @@ consultado de verdade na transportadora:
 | Transportadora | Formato | Integração |
 | --- | --- | --- |
 | Shopee Xpress | `BR` + 12 dígitos + letra | API pública da Shopee Xpress (spx.com.br) — `ShopeeXpressGateway` |
-| Jadlog | 14 dígitos | [Melhor Rastreio](https://melhorrastreio.com.br), agregador sem chave — `MelhorRastreioGateway` (sem teste com código real) |
-| Loggi | `LG` + 10 dígitos | Melhor Rastreio (sem teste com código real) |
-| Total Express | `TE` + 12 dígitos | sem integração real (não coberta pelo agregador) |
+| Total Express | `TE` + 12 dígitos | sem integração real — `UntrackedCarrierGateway` nunca traz movimentação |
 
-**Correios não são aceitos no cadastro.** Com um código real dos Correios, o Melhor Rastreio não
-devolveu nenhum evento (ele só mostra códigos que alguém já cadastrou na plataforma dele), e o
-site dos Correios exige verificação humana. A única fonte confiável é a API oficial dos Correios,
-que exige contrato com CNPJ.
+**Correios, Jadlog e Loggi não são aceitos no cadastro.** O agregador gratuito Melhor Rastreio
+não devolveu nenhum evento para um código real dos Correios (ele só mostra códigos que alguém já
+cadastrou na plataforma dele), e os sites de rastreio dessas transportadoras exigem verificação
+humana. A única fonte confiável é a API oficial de cada uma, que exige contrato.
 
-O `CarrierRouterGateway` escolhe a integração pela transportadora. A API oficial dos Correios
-exige contrato; trocar o agregador por ela é escrever outra classe que implemente
-`ICarrierTrackingGateway` e mudar uma linha no composition root, sem tocar no `OrdersService`.
+O `CarrierRouterGateway` escolhe a integração pela transportadora. Ligar a API oficial de uma
+transportadora é escrever outra classe que implemente `ICarrierTrackingGateway`, devolver o
+formato dela a `CARRIER_PATTERNS` e acrescentar uma linha no composition root, sem tocar no
+`OrdersService`.
 
 - O cadastro importa todo o histórico que a transportadora já tem; "Atualizar status" traz só
   os eventos novos.

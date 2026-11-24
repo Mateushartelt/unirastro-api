@@ -16,5 +16,5 @@ const app = createBackend({
 
 app.listen(PORT, () => {
   console.log(`UNIRASTRO API em http://localhost:${PORT}/api`);
-  console.log(`Transportadoras: ${process.env.CARRIER_GATEWAY === 'simulado' ? 'simuladas' : 'rastreio real (Shopee Xpress + Melhor Rastreio)'}`);
+  console.log(`Transportadoras: ${process.env.CARRIER_GATEWAY === 'simulado' ? 'simuladas' : 'rastreio real (Shopee Xpress)'}`);
 });
