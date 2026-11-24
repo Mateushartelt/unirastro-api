@@ -49,6 +49,26 @@ export function incidentsFromOrder(
   });
 }
 
+/**
+ * Incidentes historicos: o que o reprocessamento do historico encontrou. Ja nascem resolvidos,
+ * porque a anomalia acabou antes de existir alguem para agir.
+ */
+export function pastIncidentsFromOrder(order: Order, context: IncidentContext): Incident[] {
+  return (order.pastAnomalies ?? []).map((past) => {
+    const { endedAt: _endedAt, ...anomaly } = past;
+    return {
+      ...anomaly,
+      id: `${incidentId(order.code, past.rule)}::${past.detectedAt}`,
+      tenantId: order.tenantId,
+      code: order.code,
+      carrier: order.carrier,
+      notified: context.wasNotified(past.rule),
+      resolved: true,
+      historical: true,
+    };
+  });
+}
+
 /** Abertos antes de resolvidos, mais graves antes de menos graves, recentes antes de antigos. */
 export function compareIncidents(a: Incident, b: Incident): number {
   if (a.resolved !== b.resolved) return a.resolved ? 1 : -1;

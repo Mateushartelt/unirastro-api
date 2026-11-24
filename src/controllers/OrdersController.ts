@@ -33,6 +33,10 @@ export class OrdersController {
     send(res, this.orders.remove(authOf(res).tenantId, req.params.code));
   };
 
+  reprocess = (req: Request<{ code: string }>, res: Response) => {
+    send(res, this.orders.reprocess(authOf(res).tenantId, req.params.code));
+  };
+
   refresh = async (req: Request<{ code: string }>, res: Response) => {
     send(res, await this.orders.refresh(authOf(res).tenantId, req.params.code));
   };

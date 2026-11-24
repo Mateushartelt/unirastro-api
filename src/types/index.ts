@@ -86,6 +86,18 @@ export interface Order {
    * consulta. Uma regra sai daqui quando a anomalia some, e volta a avisar se ela reaparecer.
    */
   alertedRules?: string[];
+  /**
+   * Anomalias que o historico teria disparado antes do monitoramento comecar, preenchidas pelo
+   * reprocessamento do historico (POST /api/encomendas/:code/reprocessar).
+   */
+  pastAnomalies?: PastAnomaly[];
+}
+
+/** Anomalia encontrada no historico: quando teria disparado e quando acabou. */
+export interface PastAnomaly extends Anomaly {
+  detectedAt: string;
+  /** O evento que encerrou a anomalia (o pacote voltou a andar, foi entregue...). */
+  endedAt: string;
 }
 
 /** Encomenda com o que as regras de dominio derivaram dela. */
@@ -125,6 +137,8 @@ export interface Incident extends Anomaly {
   /** Se o cliente final ja recebeu o aviso proativo. */
   notified: boolean;
   resolved: boolean;
+  /** Incidente reconstruido do historico: ja encerrado, sem acao a tomar. */
+  historical?: boolean;
 }
 
 /* ------------------------------------------------------------------ *

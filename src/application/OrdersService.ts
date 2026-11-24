@@ -11,6 +11,7 @@
  */
 
 import type { AnomalyDetector } from '../domain/anomalies/AnomalyDetector';
+import { replayHistory } from '../domain/anomalies/replayHistory';
 import type { CarrierDetector } from '../domain/carriers/CarrierDetector';
 import type { NotificationPolicy } from '../domain/incidents/NotificationPolicy';
 import {
@@ -97,6 +98,26 @@ export class OrdersService {
   remove(tenantId: string, code: string): Result<{ code: string }> {
     if (!this.deps.orders.remove(tenantId, code)) return this.notFound(code);
     return success({ code }, `Encomenda ${code} apagada.`);
+  }
+
+  /**
+   * Reprocessa o historico como se a encomenda fosse monitorada desde o primeiro evento e
+   * guarda as anomalias encontradas, que viram incidentes historicos na central.
+   */
+  reprocess(tenantId: string, code: string): Result<OrderWithAnomalies> {
+    const order = this.deps.orders.findByCode(tenantId, code);
+    if (!order) return this.notFound(code);
+
+    const pastAnomalies = replayHistory(order, this.deps.anomalies);
+    const updated = { ...order, pastAnomalies };
+    this.deps.orders.update(updated);
+
+    const n = pastAnomalies.length;
+    const message =
+      n === 0
+        ? 'Histórico reprocessado: nenhuma anomalia no caminho.'
+        : `Histórico reprocessado: ${n} ${n === 1 ? 'anomalia encontrada' : 'anomalias encontradas'}.`;
+    return success(this.enrich(updated), message);
   }
 
   /** Consulta de status sob demanda (RF02). No sistema real quem faz isso e um worker. */

@@ -6,7 +6,11 @@
  */
 
 import type { AnomalyDetector } from '../domain/anomalies/AnomalyDetector';
-import { compareIncidents, incidentsFromOrder } from '../domain/incidents/incidents';
+import {
+  compareIncidents,
+  incidentsFromOrder,
+  pastIncidentsFromOrder,
+} from '../domain/incidents/incidents';
 import type { NotificationPolicy } from '../domain/incidents/NotificationPolicy';
 import type { Incident } from '../types';
 import type {
@@ -46,7 +50,10 @@ export class IncidentsService {
 
     const derived = orders
       .listByTenant(tenantId)
-      .flatMap((order) => incidentsFromOrder(order, anomalies.detect(order, now), context));
+      .flatMap((order) => [
+        ...incidentsFromOrder(order, anomalies.detect(order, now), context),
+        ...pastIncidentsFromOrder(order, context),
+      ]);
 
     const system = systemIncidents
       .listByTenant(tenantId)
