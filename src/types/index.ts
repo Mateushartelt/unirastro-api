@@ -81,6 +81,11 @@ export interface Order {
   plannedRoute: string[];
   /** Do mais recente para o mais antigo, como o design exibe. */
   timeline: TrackingEvent[];
+  /**
+   * Regras de anomalia que ja geraram alerta ao cliente final, para nao avisar de novo a cada
+   * consulta. Uma regra sai daqui quando a anomalia some, e volta a avisar se ela reaparecer.
+   */
+  alertedRules?: string[];
 }
 
 /** Encomenda com o que as regras de dominio derivaram dela. */

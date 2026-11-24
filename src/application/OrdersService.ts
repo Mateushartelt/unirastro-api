@@ -81,15 +81,13 @@ export class OrdersService {
     workers.recordSync(new Date());
 
     // 3. avaliarAnomalias(eventos): cada AnomalyRule e uma estrategia (Strategy)
-    const enriched = this.enrich(order);
+    // 5. opt [anomalia detectada]: publicarAlerta(encomenda), lembrando o que ja foi avisado
+    order = this.publishNewAlerts(order);
 
     // 4. salvar(encomenda)
     orders.add(order);
 
-    // 5. opt [anomalia detectada]: publicarAlerta(encomenda)
-    this.publishAlerts(order, enriched);
-
-    return success(enriched, createdMessage(carrier, first));
+    return success(this.enrich(order), createdMessage(carrier, first));
   }
 
   /**
@@ -117,15 +115,17 @@ export class OrdersService {
     const tracked = await this.track(order);
     if (!tracked.ok) return tracked;
 
+    // Mesmo sem evento novo uma anomalia pode surgir: a parada prolongada nasce do tempo
+    // passando. Por isso o alerta e avaliado em toda consulta, nao so quando ha movimentacao.
     const update = tracked.data;
-    if (!update || update.events.length === 0) {
-      return success(this.enrich(order), 'Nenhuma movimentação nova desde a última consulta.');
-    }
+    const updated = this.publishNewAlerts(this.applyUpdate(order, update));
+    if (updated !== order) orders.update(updated);
 
-    const updated = this.applyUpdate(order, update);
-    orders.update(updated);
-
-    return success(this.enrich(updated), updateMessage(update));
+    const message =
+      update && update.events.length > 0
+        ? updateMessage(update)
+        : 'Nenhuma movimentação nova desde a última consulta.';
+    return success(this.enrich(updated), message);
   }
 
   /** Consulta a transportadora e traduz a falha de rede em Result, sem deixar a excecao vazar. */
@@ -149,15 +149,26 @@ export class OrdersService {
     return { ...order, status: update.status, timeline: [...update.events, ...previous] };
   }
 
-  /** So avisa o cliente final das anomalias cujo gatilho (RF05) esta ligado. */
-  private publishAlerts(order: Order, enriched: OrderWithAnomalies): void {
-    if (!enriched.hasAnomaly) return;
+  /**
+   * Avisa o cliente final das anomalias novas cujo gatilho (RF05) esta ligado e devolve a
+   * encomenda com `alertedRules` atualizado. Anomalia ja avisada nao gera alerta repetido;
+   * anomalia com gatilho desligado fica de fora, para avisar se o gatilho for ligado depois.
+   * Devolve o mesmo objeto quando nada mudou.
+   */
+  private publishNewAlerts(order: Order): Order {
+    const anomalies = this.deps.anomalies.detect(order);
+    const current = new Set(anomalies.map((a) => a.rule));
+    const already = (order.alertedRules ?? []).filter((rule) => current.has(rule));
 
     const triggers = this.deps.triggers.list();
-    const notifiable = enriched.anomalies.filter((a) =>
-      this.deps.notifications.wasNotified(a.rule, triggers),
+    const fresh = anomalies.filter(
+      (a) => !already.includes(a.rule) && this.deps.notifications.wasNotified(a.rule, triggers),
     );
-    if (notifiable.length > 0) this.deps.alerts.publish(order, notifiable);
+    if (fresh.length > 0) this.deps.alerts.publish(order, fresh);
+
+    const alertedRules = [...already, ...fresh.map((a) => a.rule)];
+    if (sameRules(alertedRules, order.alertedRules ?? [])) return order;
+    return { ...order, alertedRules };
   }
 
   /** Acrescenta a cada encomenda o que as regras de dominio derivaram dela. */
@@ -190,4 +201,8 @@ function updateMessage(update: TrackingUpdate): string {
 
 function eventCount(n: number): string {
   return n === 1 ? '1 movimentação' : `${n} movimentações`;
+}
+
+function sameRules(a: readonly string[], b: readonly string[]): boolean {
+  return a.length === b.length && a.every((rule) => b.includes(rule));
 }
