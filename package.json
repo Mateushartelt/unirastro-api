@@ -10,8 +10,9 @@
     "test": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/*.test.ts",
     "typecheck": "tsc --noEmit",
     "arch": "node scripts/check-architecture.mjs",
-    "test:unit": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/businessRules.test.ts test/ordersService.test.ts",
-    "test:integration": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/sqliteOrderRepository.test.ts test/api.test.ts"
+    "test:unit": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/businessRules.test.ts test/ordersService.test.ts test/melhorRastreioGateway.test.ts test/shopeeXpressGateway.test.ts",
+    "test:integration": "tsx --disable-warning=ExperimentalWarning --test --test-reporter=spec test/sqliteOrderRepository.test.ts test/api.test.ts",
+    "rastrear": "tsx scripts/rastrear.ts"
   },
   "dependencies": {
     "express": "^5.3.0"

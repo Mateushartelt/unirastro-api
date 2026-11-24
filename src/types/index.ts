@@ -15,6 +15,7 @@ export const CARRIERS = [
   'Jadlog',
   'Loggi',
   'Total Express',
+  'Shopee Xpress',
 ] as const;
 
 export type Carrier = (typeof CARRIERS)[number];

@@ -13,6 +13,8 @@ const STATUS_BY_FAILURE: Record<FailureKind, number> = {
   unauthorized: 401,
   forbidden: 403,
   not_found: 404,
+  // Dependencia externa (transportadora) fora do ar.
+  unavailable: 502,
 };
 
 export function send<T>(res: Response, result: Result<T>, successStatus = 200): void {

@@ -35,6 +35,11 @@ import { WorkersController } from '../controllers/WorkersController';
 import { createApp } from '../http/app';
 import { TokenSigner } from '../http/TokenSigner';
 import { ConsoleAlertPublisher } from '../integrations/ConsoleAlertPublisher';
+import { CarrierRouterGateway } from '../integrations/CarrierRouterGateway';
+import { DemoAwareCarrierGateway } from '../integrations/DemoAwareCarrierGateway';
+import { LoggingCarrierGateway } from '../integrations/LoggingCarrierGateway';
+import { MelhorRastreioGateway } from '../integrations/MelhorRastreioGateway';
+import { ShopeeXpressGateway } from '../integrations/ShopeeXpressGateway';
 import { SimulatedCarrierGateway } from '../integrations/SimulatedCarrierGateway';
 import { InMemoryIncidentResolutionRepository } from '../repositories/InMemoryIncidentResolutionRepository';
 import { InMemoryOrderRepository } from '../repositories/InMemoryOrderRepository';
@@ -42,7 +47,7 @@ import { InMemorySystemIncidentRepository } from '../repositories/InMemorySystem
 import { InMemoryTriggerRepository } from '../repositories/InMemoryTriggerRepository';
 import { InMemoryUserDirectory } from '../repositories/InMemoryUserDirectory';
 import { InMemoryWorkerMonitor } from '../repositories/InMemoryWorkerMonitor';
-import type { IAlertPublisher, IOrderRepository } from '../repositories/ports';
+import type { IAlertPublisher, ICarrierTrackingGateway, IOrderRepository } from '../repositories/ports';
 import { openDatabase } from '../repositories/sqlite/database';
 import { SqliteOrderRepository } from '../repositories/sqlite/SqliteOrderRepository';
 
@@ -60,6 +65,11 @@ export interface BackendOptions {
   alerts?: IAlertPublisher;
   /** Arquivo SQLite das encomendas. Sem ele, as encomendas ficam so em memoria. */
   databaseFile?: string;
+  /**
+   * 'real' consulta o Melhor Rastreio para os codigos cadastrados (os de demonstracao seguem
+   * simulados). O padrao e 'simulado', para os testes nao dependerem de rede.
+   */
+  carriers?: 'real' | 'simulado';
 }
 
 function createDomain() {
@@ -73,6 +83,23 @@ function createDomain() {
 function createOrderRepository(databaseFile?: string): IOrderRepository {
   if (!databaseFile) return new InMemoryOrderRepository(MOCK_ORDERS);
   return new SqliteOrderRepository(openDatabase(databaseFile), MOCK_ORDERS);
+}
+
+/**
+ * Rastreio real: Shopee Xpress pela API dela; Correios, Jadlog e Loggi pelo Melhor Rastreio.
+ * Exportado para o script `npm run rastrear` usar exatamente as mesmas pecas da API.
+ */
+export function createRealCarrierGateway(): ICarrierTrackingGateway {
+  return new CarrierRouterGateway(
+    { 'Shopee Xpress': new LoggingCarrierGateway(new ShopeeXpressGateway(), 'Shopee Xpress') },
+    new LoggingCarrierGateway(new MelhorRastreioGateway(), 'Melhor Rastreio'),
+  );
+}
+
+function createTrackingGateway(mode: BackendOptions['carriers']): ICarrierTrackingGateway {
+  const simulated = new SimulatedCarrierGateway();
+  if (mode !== 'real') return simulated;
+  return new DemoAwareCarrierGateway(createRealCarrierGateway(), simulated, MOCK_ORDERS.map((o) => o.code));
 }
 
 function createRepositories(options: BackendOptions) {
@@ -97,7 +124,7 @@ function createServices(options: BackendOptions) {
     orders: repos.orders,
     triggers: repos.triggers,
     workers: repos.workers,
-    tracking: new SimulatedCarrierGateway(),
+    tracking: createTrackingGateway(options.carriers),
     alerts: options.alerts ?? new ConsoleAlertPublisher(),
   });
   const incidents = new IncidentsService({

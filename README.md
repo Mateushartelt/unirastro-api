@@ -30,6 +30,36 @@ npm run arch       # falha se algum import furar as camadas do C3
 | --- | --- | --- |
 | `API_PORT` | `3333` | porta da API |
 | `TOKEN_SECRET` | `unirastro-dev-secret` | segredo HMAC dos tokens; obrigatório trocar fora do desenvolvimento |
+| `CARRIER_GATEWAY` | `real` | `real` rastreia os códigos cadastrados na transportadora de verdade; `simulado` usa só a transportadora simulada |
+
+## Rastreio real
+
+Com `CARRIER_GATEWAY=real` (o padrão do `npm run dev`), cada código cadastrado no painel é
+consultado de verdade na transportadora:
+
+| Transportadora | Formato | Integração |
+| --- | --- | --- |
+| Shopee Xpress | `BR` + 12 dígitos + letra | API pública da Shopee Xpress (spx.com.br) — `ShopeeXpressGateway` |
+| Correios | `AA123456789BR` | [Melhor Rastreio](https://melhorrastreio.com.br), agregador sem chave — `MelhorRastreioGateway` |
+| Jadlog | 14 dígitos | Melhor Rastreio |
+| Loggi | `LG` + 10 dígitos | Melhor Rastreio |
+| Total Express | `TE` + 12 dígitos | sem integração real (não coberta pelo agregador) |
+
+O `CarrierRouterGateway` escolhe a integração pela transportadora. A API oficial dos Correios
+exige contrato; trocar o agregador por ela é escrever outra classe que implemente
+`ICarrierTrackingGateway` e mudar uma linha no composition root, sem tocar no `OrdersService`.
+
+- O cadastro importa todo o histórico que a transportadora já tem; "Atualizar status" traz só
+  os eventos novos.
+- As encomendas de demonstração continuam na transportadora simulada
+  (`DemoAwareCarrierGateway`), porque os códigos delas não existem de verdade.
+- Transportadora fora do ar: o cadastro é aceito assim mesmo; a consulta devolve **502**.
+- Cada consulta real aparece no terminal da API (`LoggingCarrierGateway`), por exemplo
+  `[Shopee Xpress] Shopee Xpress BR262730058243Y -> 3 evento(s) novo(s), status "Em trânsito" (431 ms)`.
+- Para consultar um código sem subir nada: `npm run rastrear -- BR262730058243Y`.
+
+Testado com uma encomenda real da Shopee Xpress em 23/11/2026; a resposta gravada (sem
+endereços) está em `test/fixtures/` e o print/log em `docs/evidencias/` do repositório do painel.
 
 ## Rotas
 
@@ -50,7 +80,7 @@ do token, nunca de parâmetro enviado pelo cliente.
 | GET | `/api/workers/status` | autenticado |
 
 Status: 200, 201 (cadastro), 400 (validação), 401 (sem token ou credencial inválida), 403
-(papel sem permissão), 404.
+(papel sem permissão), 404, 502 (transportadora não respondeu).
 
 ## Arquitetura
 
