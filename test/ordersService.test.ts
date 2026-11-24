@@ -156,3 +156,37 @@ test('gatilho ligado depois avisa na proxima consulta, mesmo sem evento novo', a
 
   assert.deepEqual(published, [['Parada prolongada']]);
 });
+
+/* ---------------- Historico reprocessado sozinho (cadastro e consultas) ---------------- */
+
+const moved = (h: number, place = 'Cajamar, SP') => ({ title: 'Objeto em trânsito', place, at: hoursAgo(h), rawCode: 'TRN' });
+
+test('cadastro de encomenda que ja andou traz as paradas longas do caminho', async () => {
+  const { service } = setupScripted([
+    { events: [moved(2, 'Curitiba, PR'), moved(70, 'Galeão, RJ')], status: 'Em trânsito' },
+  ]);
+
+  const result = await service.create('t', input);
+
+  assert.ok(result.ok);
+  assert.equal(result.data.hasAnomaly, false, 'agora o pacote esta andando');
+  assert.deepEqual(result.data.pastAnomalies?.map((p) => p.rule), ['Parada prolongada']);
+  assert.match(result.message, /1 anomalia no histórico/);
+});
+
+test('parada que termina entre duas consultas vira incidente historico', async () => {
+  const { service } = setupScripted([
+    { events: [moved(60)], status: 'Em trânsito' },
+    { events: [moved(5, 'Curitiba, PR')], status: 'Em trânsito' },
+  ]);
+
+  const created = await service.create('t', input);
+  assert.ok(created.ok);
+  assert.deepEqual(created.data.anomalies.map((a) => a.rule), ['Parada prolongada']);
+  assert.deepEqual(created.data.pastAnomalies, []);
+
+  const refreshed = await service.refresh('t', input.code);
+  assert.ok(refreshed.ok);
+  assert.deepEqual(refreshed.data.anomalies, [], 'voltou a andar');
+  assert.deepEqual(refreshed.data.pastAnomalies?.map((p) => p.rule), ['Parada prolongada']);
+});
