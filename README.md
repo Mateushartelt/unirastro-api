@@ -54,6 +54,9 @@ formato dela a `CARRIER_PATTERNS` e acrescentar uma linha no composition root, s
 
 - O cadastro importa todo o histórico que a transportadora já tem; "Atualizar status" traz só
   os eventos novos.
+- Sempre que chegam eventos (no cadastro ou em "Atualizar status"), o histórico é reprocessado
+  pelas regras de anomalia: as paradas longas que a encomenda teve no caminho aparecem na central
+  como incidentes **históricos**, já encerrados.
 - As encomendas de demonstração continuam na transportadora simulada
   (`DemoAwareCarrierGateway`), porque os códigos delas não existem de verdade.
 - Transportadora fora do ar: o cadastro é aceito assim mesmo; a consulta devolve **502**.

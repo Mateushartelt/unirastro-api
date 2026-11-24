@@ -88,7 +88,7 @@ export class OrdersService {
     // 4. salvar(encomenda)
     orders.add(order);
 
-    return success(this.enrich(order), createdMessage(carrier, first));
+    return success(this.enrich(order), createdMessage(carrier, first, order.pastAnomalies?.length ?? 0));
   }
 
   /**
@@ -163,11 +163,16 @@ export class OrdersService {
    * Acrescenta os eventos novos. O marcador "aguardando primeira consulta" (rawCode LOCAL) sai
    * assim que a transportadora devolve historico: ele e mais novo que os eventos reais e
    * ficaria fora de ordem na linha do tempo.
+   *
+   * Com eventos novos o historico tambem e reprocessado: o cadastro de uma encomenda que ja
+   * andou traz para a central as anomalias que ela teve no caminho, e uma parada que terminou
+   * entre duas consultas vira incidente historico em vez de sumir.
    */
   private applyUpdate(order: Order, update: TrackingUpdate | null): Order {
     if (!update || update.events.length === 0) return order;
     const previous = order.timeline.filter((e) => e.rawCode !== 'LOCAL');
-    return { ...order, status: update.status, timeline: [...update.events, ...previous] };
+    const updated = { ...order, status: update.status, timeline: [...update.events, ...previous] };
+    return { ...updated, pastAnomalies: replayHistory(updated, this.deps.anomalies) };
   }
 
   /**
@@ -205,14 +210,20 @@ export class OrdersService {
   }
 }
 
-function createdMessage(carrier: Carrier, first: Result<TrackingUpdate | null>): string {
+function createdMessage(
+  carrier: Carrier,
+  first: Result<TrackingUpdate | null>,
+  pastAnomalies: number,
+): string {
   const base = `Pedido cadastrado · ${carrier} identificada`;
   if (!first.ok) return `${base} · ${carrier} fora do ar, nova consulta mais tarde`;
   if (!first.data || first.data.events.length === 0) {
     return `${base} · ainda sem movimentação na transportadora`;
   }
   const n = first.data.events.length;
-  return `${base} · ${eventCount(n)} ${n === 1 ? 'importada' : 'importadas'}`;
+  const imported = `${base} · ${eventCount(n)} ${n === 1 ? 'importada' : 'importadas'}`;
+  if (pastAnomalies === 0) return imported;
+  return `${imported} · ${pastAnomalies} ${pastAnomalies === 1 ? 'anomalia' : 'anomalias'} no histórico`;
 }
 
 function updateMessage(update: TrackingUpdate): string {
