@@ -92,6 +92,15 @@ export class OrdersService {
     return success(enriched, createdMessage(carrier, first));
   }
 
+  /**
+   * Apaga uma encomenda da empresa: para de rastrear e some da lista. Os incidentes dela somem
+   * junto, porque sao derivados das encomendas.
+   */
+  remove(tenantId: string, code: string): Result<{ code: string }> {
+    if (!this.deps.orders.remove(tenantId, code)) return this.notFound(code);
+    return success({ code }, `Encomenda ${code} apagada.`);
+  }
+
   /** Consulta de status sob demanda (RF02). No sistema real quem faz isso e um worker. */
   async refresh(tenantId: string, code: string): Promise<Result<OrderWithAnomalies>> {
     const { orders, workers } = this.deps;

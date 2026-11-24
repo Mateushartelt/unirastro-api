@@ -50,6 +50,13 @@ export class SqliteOrderRepository implements IOrderRepository {
       .run(order.status, JSON.stringify(order), order.tenantId, order.code);
   }
 
+  remove(tenantId: string, code: string): boolean {
+    const result = this.db
+      .prepare('DELETE FROM orders WHERE tenant_id = ? AND code = ?')
+      .run(tenantId, code);
+    return Number(result.changes) > 0;
+  }
+
   private count(): number {
     const row = this.db.prepare('SELECT COUNT(*) AS total FROM orders').get() as { total: number };
     return row.total;

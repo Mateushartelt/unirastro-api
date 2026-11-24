@@ -29,6 +29,10 @@ export class OrdersController {
     send(res, await this.orders.create(authOf(res).tenantId, input), 201);
   };
 
+  remove = (req: Request<{ code: string }>, res: Response) => {
+    send(res, this.orders.remove(authOf(res).tenantId, req.params.code));
+  };
+
   refresh = async (req: Request<{ code: string }>, res: Response) => {
     send(res, await this.orders.refresh(authOf(res).tenantId, req.params.code));
   };

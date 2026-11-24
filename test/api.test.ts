@@ -112,6 +112,30 @@ describe('encomendas', () => {
     assert.equal(status, 403);
   });
 
+  test('operador apaga a encomenda; ela some e o codigo volta a ser aceito', async () => {
+    const order = { code: 'EF123456789BR', recipient: 'Ana', city: '' };
+    await api.call('POST', '/encomendas', order, marina);
+
+    const { status, json } = await api.call('DELETE', '/encomendas/EF123456789BR', undefined, marina);
+    assert.equal(status, 200);
+    assert.equal(json.message, 'Encomenda EF123456789BR apagada.');
+    assert.equal((await api.call('GET', '/encomendas/EF123456789BR', undefined, marina)).status, 404);
+    assert.equal((await api.call('POST', '/encomendas', order, marina)).status, 201);
+  });
+
+  test('apagar codigo inexistente devolve 404; suporte nao apaga (403)', async () => {
+    assert.equal((await api.call('DELETE', '/encomendas/ZZ999999999BR', undefined, marina)).status, 404);
+
+    const tais = await api.login('tais@aurora.com.br', 'suporte');
+    assert.equal((await api.call('DELETE', '/encomendas/QB771204558BR', undefined, tais)).status, 403);
+  });
+
+  test('outra empresa nao apaga encomenda da Aurora (404)', async () => {
+    const diego = await api.login('diego@bonsai.com.br', 'bonsai');
+    assert.equal((await api.call('DELETE', '/encomendas/QB771204558BR', undefined, diego)).status, 404);
+    assert.equal((await api.call('GET', '/encomendas/QB771204558BR', undefined, marina)).status, 200);
+  });
+
   test('consulta de status acrescenta movimentacao', async () => {
     const before = await api.call('GET', '/encomendas/LG2039481122', undefined, marina);
     const { status, json } = await api.call('POST', '/encomendas/LG2039481122/consultar', undefined, marina);

@@ -16,6 +16,8 @@ import type { Role } from '../types';
 const PERMISSION_MATRIX = {
   editTriggers: ['Admin', 'Operador de Logística'],
   createOrders: ['Admin', 'Operador de Logística'],
+  // Quem cadastra pode desfazer o cadastro; Suporte so consulta.
+  deleteOrders: ['Admin', 'Operador de Logística'],
   // Suporte trata incidentes, entao pode resolve-los.
   resolveIncidents: ['Admin', 'Operador de Logística', 'Suporte'],
 } as const satisfies Record<string, readonly Role[]>;
