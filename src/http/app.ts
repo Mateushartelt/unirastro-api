@@ -47,6 +47,7 @@ function createApiRouter(controllers: Controllers, signer: TokenSigner): Router 
   api.get('/encomendas/:code', orders.get);
   api.post('/encomendas/:code/consultar', orders.refresh);
   api.delete('/encomendas/:code', authorize('deleteOrders'), orders.remove);
+  api.post('/encomendas/:code/reprocessar', authorize('createOrders'), orders.reprocess);
 
   api.get('/incidentes', incidents.list);
   api.post('/incidentes/:id/resolver', authorize('resolveIncidents'), incidents.resolve);
