@@ -91,12 +91,9 @@ describe('encomendas', () => {
   });
 
   test('codigo duplicado devolve 400', async () => {
-    const { status, json } = await api.call(
-      'POST',
-      '/encomendas',
-      { code: '10084531275940', recipient: 'Ana', city: '' },
-      marina,
-    );
+    const order = { code: 'BR555555555555A', recipient: 'Ana', city: '' };
+    assert.equal((await api.call('POST', '/encomendas', order, marina)).status, 201);
+    const { status, json } = await api.call('POST', '/encomendas', order, marina);
     assert.equal(status, 400);
     assert.equal(json.message, 'Código duplicado.');
   });

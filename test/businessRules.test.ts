@@ -24,8 +24,6 @@ describe('RF01 · identificacao da transportadora pelo codigo', () => {
 
   test('reconhece cada transportadora integrada pelo formato do codigo', () => {
     assert.equal(detector.detect('BR123456789012A'), 'Shopee Xpress');
-    assert.equal(detector.detect('12345678901234'), 'Jadlog');
-    assert.equal(detector.detect('LG2039481122'), 'Loggi');
     assert.equal(detector.detect('TE123456789012'), 'Total Express');
   });
 
@@ -33,8 +31,10 @@ describe('RF01 · identificacao da transportadora pelo codigo', () => {
     assert.equal(detector.detect('  br123456789012a '), 'Shopee Xpress');
   });
 
-  test('codigo dos Correios nao e mais aceito no cadastro', () => {
+  test('Correios, Jadlog e Loggi nao sao mais aceitos no cadastro', () => {
     assert.equal(detector.detect('AB123456789BR'), null);
+    assert.equal(detector.detect('12345678901234'), null);
+    assert.equal(detector.detect('LG2039481122'), null);
   });
 
   test('codigo fora de qualquer formato devolve null', () => {

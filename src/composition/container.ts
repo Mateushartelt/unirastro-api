@@ -38,9 +38,9 @@ import { ConsoleAlertPublisher } from '../integrations/ConsoleAlertPublisher';
 import { CarrierRouterGateway } from '../integrations/CarrierRouterGateway';
 import { DemoAwareCarrierGateway } from '../integrations/DemoAwareCarrierGateway';
 import { LoggingCarrierGateway } from '../integrations/LoggingCarrierGateway';
-import { MelhorRastreioGateway } from '../integrations/MelhorRastreioGateway';
 import { ShopeeXpressGateway } from '../integrations/ShopeeXpressGateway';
 import { SimulatedCarrierGateway } from '../integrations/SimulatedCarrierGateway';
+import { UntrackedCarrierGateway } from '../integrations/UntrackedCarrierGateway';
 import { InMemoryIncidentResolutionRepository } from '../repositories/InMemoryIncidentResolutionRepository';
 import { InMemoryOrderRepository } from '../repositories/InMemoryOrderRepository';
 import { InMemorySystemIncidentRepository } from '../repositories/InMemorySystemIncidentRepository';
@@ -86,13 +86,14 @@ function createOrderRepository(databaseFile?: string): IOrderRepository {
 }
 
 /**
- * Rastreio real: Shopee Xpress pela API dela; Jadlog e Loggi pelo Melhor Rastreio.
+ * Rastreio real: Shopee Xpress pela API dela. As demais transportadoras aceitas nao tem
+ * integracao real ainda e nunca trazem movimentacao.
  * Exportado para o script `npm run rastrear` usar exatamente as mesmas pecas da API.
  */
 export function createRealCarrierGateway(): ICarrierTrackingGateway {
   return new CarrierRouterGateway(
     { 'Shopee Xpress': new LoggingCarrierGateway(new ShopeeXpressGateway(), 'Shopee Xpress') },
-    new LoggingCarrierGateway(new MelhorRastreioGateway(), 'Melhor Rastreio'),
+    new UntrackedCarrierGateway(),
   );
 }
 
