@@ -23,14 +23,18 @@ describe('RF01 · identificacao da transportadora pelo codigo', () => {
   const detector = new CarrierDetector(CARRIER_PATTERNS);
 
   test('reconhece cada transportadora integrada pelo formato do codigo', () => {
-    assert.equal(detector.detect('AB123456789BR'), 'Correios');
+    assert.equal(detector.detect('BR123456789012A'), 'Shopee Xpress');
     assert.equal(detector.detect('12345678901234'), 'Jadlog');
     assert.equal(detector.detect('LG2039481122'), 'Loggi');
     assert.equal(detector.detect('TE123456789012'), 'Total Express');
   });
 
   test('normaliza espacos e minusculas antes de detectar', () => {
-    assert.equal(detector.detect('  ab123456789br '), 'Correios');
+    assert.equal(detector.detect('  br123456789012a '), 'Shopee Xpress');
+  });
+
+  test('codigo dos Correios nao e mais aceito no cadastro', () => {
+    assert.equal(detector.detect('AB123456789BR'), null);
   });
 
   test('codigo fora de qualquer formato devolve null', () => {
@@ -39,20 +43,20 @@ describe('RF01 · identificacao da transportadora pelo codigo', () => {
 });
 
 describe('RF01 · validacao do cadastro de encomenda', () => {
-  const input = normalizeNewOrder({ code: ' ab123456789br ', recipient: ' Ana ', city: ' Curitiba ' });
+  const input = normalizeNewOrder({ code: ' br123456789012a ', recipient: ' Ana ', city: ' Curitiba ' });
 
   test('cadastro completo e valido nao devolve erro', () => {
-    assert.deepEqual(input, { code: 'AB123456789BR', recipient: 'Ana', city: 'Curitiba' });
-    assert.equal(validateNewOrder(input, 'Correios', false), null);
+    assert.deepEqual(input, { code: 'BR123456789012A', recipient: 'Ana', city: 'Curitiba' });
+    assert.equal(validateNewOrder(input, 'Shopee Xpress', false), null);
   });
 
   test('codigo nao reconhecido, destinatario vazio e duplicado sao recusados', () => {
     assert.equal(validateNewOrder(input, null, false)?.message, 'Código não reconhecido.');
     assert.equal(
-      validateNewOrder({ ...input, recipient: '' }, 'Correios', false)?.message,
+      validateNewOrder({ ...input, recipient: '' }, 'Shopee Xpress', false)?.message,
       'Destinatário obrigatório.',
     );
-    assert.equal(validateNewOrder(input, 'Correios', true)?.message, 'Código duplicado.');
+    assert.equal(validateNewOrder(input, 'Shopee Xpress', true)?.message, 'Código duplicado.');
   });
 });
 

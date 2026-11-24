@@ -103,7 +103,7 @@ describe('API com SQLite (HTTP -> servico -> banco)', () => {
     const created = await first.call(
       'POST',
       '/encomendas',
-      { code: 'ZZ987654321BR', recipient: 'Carla Lima', city: 'Recife, PE' },
+      { code: 'BR333333333333A', recipient: 'Carla Lima', city: 'Recife, PE' },
       token,
     );
     assert.equal(created.status, 201);
@@ -111,7 +111,7 @@ describe('API com SQLite (HTTP -> servico -> banco)', () => {
 
     const second = await startApi({ publish: () => {} }, dbFile);
     const token2 = await second.login('marina@aurora.com.br', 'operador');
-    const loaded = await second.call('GET', '/encomendas/ZZ987654321BR', undefined, token2);
+    const loaded = await second.call('GET', '/encomendas/BR333333333333A', undefined, token2);
     await second.close();
 
     assert.equal(loaded.status, 200);

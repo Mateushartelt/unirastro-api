@@ -56,7 +56,7 @@ function setup(stallTriggerEnabled: boolean) {
   return { service, published };
 }
 
-const input = { code: 'AB123456789BR', recipient: 'Ana', city: 'Curitiba, PR' };
+const input = { code: 'BR444444444444A', recipient: 'Ana', city: 'Curitiba, PR' };
 
 test('anomalia com gatilho ligado publica alerta', async () => {
   const { service, published } = setup(true);

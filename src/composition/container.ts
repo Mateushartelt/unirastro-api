@@ -86,7 +86,7 @@ function createOrderRepository(databaseFile?: string): IOrderRepository {
 }
 
 /**
- * Rastreio real: Shopee Xpress pela API dela; Correios, Jadlog e Loggi pelo Melhor Rastreio.
+ * Rastreio real: Shopee Xpress pela API dela; Jadlog e Loggi pelo Melhor Rastreio.
  * Exportado para o script `npm run rastrear` usar exatamente as mesmas pecas da API.
  */
 export function createRealCarrierGateway(): ICarrierTrackingGateway {

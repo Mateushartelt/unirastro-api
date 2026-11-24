@@ -1,9 +1,9 @@
 /**
  * Rastreio real (RF02) pela API publica do Melhor Rastreio.
  *
- * O Melhor Rastreio consulta Correios, Jadlog, Loggi e outras transportadoras e devolve o
- * historico num formato so. A API oficial dos Correios exige contrato; esta nao exige chave, o
- * que basta para rastrear encomendas reais numa fase academica. Trocar pela API oficial e
+ * O Melhor Rastreio consulta Jadlog, Loggi e outras transportadoras e devolve o historico num
+ * formato so, sem exigir chave. Correios ficou de fora: com um codigo real, o Melhor Rastreio
+ * nao devolveu nada (so mostra codigos que alguem ja cadastrou na plataforma dele). Trocar pela API oficial e
  * escrever outra classe que implemente ICarrierTrackingGateway (OCP).
  *
  * A classe devolve so os eventos que a encomenda ainda nao tem, para o OrdersService poder
@@ -24,7 +24,6 @@ export const MELHOR_RASTREIO_URL = 'https://api.melhorrastreio.com.br/graphql';
  * Shopee Xpress tem integracao propria (ShopeeXpressGateway).
  */
 const TRACKER_TYPE: Partial<Record<Carrier, string>> = {
-  Correios: 'correios',
   Jadlog: 'jadlog',
   Loggi: 'loggi',
 };

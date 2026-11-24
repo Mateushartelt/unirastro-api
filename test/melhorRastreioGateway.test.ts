@@ -38,9 +38,9 @@ const REMOTE_EVENTS: RemoteEvent[] = [
 
 function order(overrides: Partial<Order> = {}): Order {
   return {
-    code: 'AB123456789BR',
+    code: '12345678901234',
     tenantId: 't1',
-    carrier: 'Correios',
+    carrier: 'Jadlog',
     recipient: 'Ana',
     city: 'Curitiba, PR',
     region: 'Sul',
@@ -48,7 +48,7 @@ function order(overrides: Partial<Order> = {}): Order {
     dueAt: '2026-11-25T00:00:00.000Z',
     origin: 'São Paulo, SP',
     plannedRoute: [],
-    timeline: [{ title: 'Cadastrado', place: 'Correios', at: '2026-11-18T09:00:00.000Z', rawCode: 'LOCAL' }],
+    timeline: [{ title: 'Cadastrado', place: 'Jadlog', at: '2026-11-18T09:00:00.000Z', rawCode: 'LOCAL' }],
     ...overrides,
   };
 }
@@ -70,7 +70,7 @@ describe('MelhorRastreioGateway', () => {
     const { fn, calls } = fakeFetch(found);
     const update = await new MelhorRastreioGateway({ fetch: fn }).fetchUpdate(order());
 
-    assert.deepEqual(calls[0].payload.variables.tracker, { type: 'correios', trackingCode: 'AB123456789BR' });
+    assert.deepEqual(calls[0].payload.variables.tracker, { type: 'jadlog', trackingCode: '12345678901234' });
     assert.ok(update);
     assert.deepEqual(
       update.events.map((e) => e.title),
