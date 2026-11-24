@@ -15,12 +15,12 @@ import type { ICarrierTrackingGateway, TrackingUpdate } from '../repositories/po
 type Step = Pick<TrackingEvent, 'title' | 'place' | 'rawCode'> & { status: Order['status'] };
 
 export class SimulatedCarrierGateway implements ICarrierTrackingGateway {
-  fetchUpdate(order: Order): TrackingUpdate | null {
+  async fetchUpdate(order: Order): Promise<TrackingUpdate | null> {
     const step = nextStep(order);
     if (!step) return null;
 
     const { status, ...event } = step;
-    return { event: { ...event, at: new Date().toISOString() }, status };
+    return { events: [{ ...event, at: new Date().toISOString() }], status };
   }
 }
 

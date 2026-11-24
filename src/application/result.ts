@@ -5,7 +5,7 @@
  * `not_found` em 404 e o controller. Assim a mesma regra serviria a uma fila ou a um CLI.
  */
 
-export type FailureKind = 'invalid' | 'unauthorized' | 'forbidden' | 'not_found';
+export type FailureKind = 'invalid' | 'unauthorized' | 'forbidden' | 'not_found' | 'unavailable';
 
 export type Result<T> =
   | { ok: true; data: T; message: string }

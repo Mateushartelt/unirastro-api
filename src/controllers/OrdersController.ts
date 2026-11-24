@@ -23,13 +23,13 @@ export class OrdersController {
     send(res, this.orders.get(authOf(res).tenantId, req.params.code));
   };
 
-  create = (req: Request, res: Response) => {
+  create = async (req: Request, res: Response) => {
     const { code, recipient, city } = req.body ?? {};
     const input = { code: String(code ?? ''), recipient: String(recipient ?? ''), city: String(city ?? '') };
-    send(res, this.orders.create(authOf(res).tenantId, input), 201);
+    send(res, await this.orders.create(authOf(res).tenantId, input), 201);
   };
 
-  refresh = (req: Request<{ code: string }>, res: Response) => {
-    send(res, this.orders.refresh(authOf(res).tenantId, req.params.code));
+  refresh = async (req: Request<{ code: string }>, res: Response) => {
+    send(res, await this.orders.refresh(authOf(res).tenantId, req.params.code));
   };
 }

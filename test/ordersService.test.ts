@@ -21,13 +21,15 @@ import type { ICarrierTrackingGateway } from '../src/repositories/ports';
 
 /** Transportadora que devolve um evento de 50 horas atras: o pacote ja nasce parado. */
 const stalledCarrier: ICarrierTrackingGateway = {
-  fetchUpdate: () => ({
-    event: {
-      title: 'Objeto em trânsito',
-      place: 'Cajamar, SP',
-      at: new Date(Date.now() - 50 * 3600_000).toISOString(),
-      rawCode: 'TRN',
-    },
+  fetchUpdate: async () => ({
+    events: [
+      {
+        title: 'Objeto em trânsito',
+        place: 'Cajamar, SP',
+        at: new Date(Date.now() - 50 * 3600_000).toISOString(),
+        rawCode: 'TRN',
+      },
+    ],
     status: 'Em trânsito',
   }),
 };
@@ -55,9 +57,9 @@ function setup(stallTriggerEnabled: boolean) {
 
 const input = { code: 'AB123456789BR', recipient: 'Ana', city: 'Curitiba, PR' };
 
-test('anomalia com gatilho ligado publica alerta', () => {
+test('anomalia com gatilho ligado publica alerta', async () => {
   const { service, published } = setup(true);
-  const result = service.create('tenant-x', input);
+  const result = await service.create('tenant-x', input);
 
   assert.ok(result.ok);
   assert.equal(result.data.hasAnomaly, true);
@@ -65,9 +67,9 @@ test('anomalia com gatilho ligado publica alerta', () => {
   assert.equal(published[0].anomalies[0].rule, 'Parada prolongada');
 });
 
-test('anomalia com gatilho desligado nao publica alerta', () => {
+test('anomalia com gatilho desligado nao publica alerta', async () => {
   const { service, published } = setup(false);
-  const result = service.create('tenant-x', input);
+  const result = await service.create('tenant-x', input);
 
   assert.ok(result.ok);
   assert.equal(result.data.hasAnomaly, true);

@@ -1,0 +1,77 @@
+{
+  "retcode": 0,
+  "message": "success",
+  "data": {
+    "sls_tracking_info": {
+      "sls_tn": "BR262730058243Y",
+      "records": [
+        {
+          "tracking_code": "F510",
+          "tracking_name": "Enter Domestic Sorting Center",
+          "buyer_description": "O pedido chegou ao centro de : São Bernardo do Campo - SP e segue para a próxima etapa.",
+          "actual_time": 1795480350,
+          "display_flag": 1,
+          "milestone_name": "In transit",
+          "current_location": {
+            "location_name": "São Bernardo do Campo - SP"
+          }
+        },
+        {
+          "tracking_code": "F100",
+          "tracking_name": "Pickup From Domestic Seller",
+          "buyer_description": "Seu pedido foi coletado",
+          "actual_time": 1795460542,
+          "display_flag": 1,
+          "milestone_name": "In transit",
+          "current_location": {
+            "location_name": ""
+          }
+        },
+        {
+          "tracking_code": "F001",
+          "tracking_name": "Unsuccessful Pickup Attempt",
+          "buyer_description": "Não conseguimos coletar o pedido: Remetente não preparou o pedido",
+          "actual_time": 1795448071,
+          "display_flag": 0,
+          "milestone_name": "Preparing to ship",
+          "current_location": {
+            "location_name": ""
+          }
+        },
+        {
+          "tracking_code": "F004",
+          "tracking_name": "Courier assigned",
+          "buyer_description": "Motorista localizado, favor aguardar a realização da coleta.",
+          "actual_time": 1795423268,
+          "display_flag": 0,
+          "milestone_name": "Preparing to ship",
+          "current_location": {
+            "location_name": ""
+          }
+        },
+        {
+          "tracking_code": "F000",
+          "tracking_name": "Manifested",
+          "buyer_description": "O seu pedido está sendo preparado para envio.",
+          "actual_time": 1795423267,
+          "display_flag": 1,
+          "milestone_name": "Preparing to ship",
+          "current_location": {
+            "location_name": ""
+          }
+        },
+        {
+          "tracking_code": "A000",
+          "tracking_name": "SLSTN Created",
+          "buyer_description": "SLSTN has been created, sending request to logistic partners",
+          "actual_time": 1795423265,
+          "display_flag": 0,
+          "milestone_name": "Preparing to ship",
+          "current_location": {
+            "location_name": ""
+          }
+        }
+      ]
+    }
+  }
+}

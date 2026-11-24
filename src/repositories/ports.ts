@@ -59,15 +59,31 @@ export interface IWorkerStatusReader {
 
 /* ---------------------------- Integracoes ----------------------------- */
 
-/** Proxima movimentacao devolvida pela transportadora, ou null quando nao ha novidade. */
+/**
+ * Movimentacoes novas devolvidas pela transportadora: so as que ainda nao estao na linha do
+ * tempo da encomenda, da mais recente para a mais antiga, e o status que elas implicam.
+ */
 export interface TrackingUpdate {
-  event: Order['timeline'][number];
+  events: Order['timeline'];
   status: Order['status'];
 }
 
-/** Integracao com as APIs das transportadoras (C1/C2: "APIs das Transportadoras"). */
+/** A transportadora nao respondeu (rede, timeout, erro do servidor). */
+export class CarrierUnavailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'CarrierUnavailableError';
+  }
+}
+
+/**
+ * Integracao com as APIs das transportadoras (C1/C2: "APIs das Transportadoras").
+ *
+ * Assincrona porque a integracao real faz uma chamada de rede. Devolve null quando nao ha
+ * novidade e lanca CarrierUnavailableError quando a transportadora nao responde.
+ */
 export interface ICarrierTrackingGateway {
-  fetchUpdate(order: Order): TrackingUpdate | null;
+  fetchUpdate(order: Order): Promise<TrackingUpdate | null>;
 }
 
 /** Envio do alerta proativo ao cliente final (C1/C2: "Servicos de Notificacao"). */

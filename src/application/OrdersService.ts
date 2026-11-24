@@ -19,13 +19,15 @@ import {
   validateNewOrder,
   type NewOrderInput,
 } from '../domain/orders/newOrder';
-import type { Order, OrderWithAnomalies } from '../types';
-import type {
-  IAlertPublisher,
-  ICarrierTrackingGateway,
-  IOrderRepository,
-  ITriggerRepository,
-  IWorkerActivityRecorder,
+import type { Carrier, Order, OrderWithAnomalies } from '../types';
+import {
+  CarrierUnavailableError,
+  type IAlertPublisher,
+  type ICarrierTrackingGateway,
+  type IOrderRepository,
+  type ITriggerRepository,
+  type IWorkerActivityRecorder,
+  type TrackingUpdate,
 } from '../repositories/ports';
 import { failure, success, type Result } from './result';
 
@@ -58,8 +60,8 @@ export class OrdersService {
   }
 
   /** Cadastro de encomenda (RF01), na ordem do diagrama de sequencia. */
-  create(tenantId: string, input: NewOrderInput): Result<OrderWithAnomalies> {
-    const { orders, carriers, tracking, workers } = this.deps;
+  async create(tenantId: string, input: NewOrderInput): Promise<Result<OrderWithAnomalies>> {
+    const { orders, carriers, workers } = this.deps;
 
     // 1. detectarTransportadora(codigo) + validacao
     const clean = normalizeNewOrder(input);
@@ -71,9 +73,11 @@ export class OrdersService {
       return failure('invalid', error?.message ?? 'Cadastro inválido.', error ? [error.detail] : []);
     }
 
-    // 2. consultarRastreio(codigo): primeira consulta a transportadora
+    // 2. consultarRastreio(codigo): primeira consulta a transportadora. Se ela estiver fora do
+    // ar o cadastro vale assim mesmo; a proxima consulta traz o historico.
     let order = buildNewOrder(tenantId, clean, carrier);
-    order = this.applyUpdate(order, tracking.fetchUpdate(order));
+    const first = await this.track(order);
+    if (first.ok) order = this.applyUpdate(order, first.data);
     workers.recordSync(new Date());
 
     // 3. avaliarAnomalias(eventos): cada AnomalyRule e uma estrategia (Strategy)
@@ -85,12 +89,12 @@ export class OrdersService {
     // 5. opt [anomalia detectada]: publicarAlerta(encomenda)
     this.publishAlerts(order, enriched);
 
-    return success(enriched, `Pedido cadastrado · ${carrier} identificada · primeira consulta feita`);
+    return success(enriched, createdMessage(carrier, first));
   }
 
   /** Consulta de status sob demanda (RF02). No sistema real quem faz isso e um worker. */
-  refresh(tenantId: string, code: string): Result<OrderWithAnomalies> {
-    const { orders, tracking, workers } = this.deps;
+  async refresh(tenantId: string, code: string): Promise<Result<OrderWithAnomalies>> {
+    const { orders, workers } = this.deps;
 
     const order = orders.findByCode(tenantId, code);
     if (!order) return this.notFound(code);
@@ -101,20 +105,39 @@ export class OrdersService {
       return success(this.enrich(order), 'Encomenda já entregue — sem novas movimentações.');
     }
 
-    const update = tracking.fetchUpdate(order);
-    if (!update) {
+    const tracked = await this.track(order);
+    if (!tracked.ok) return tracked;
+
+    const update = tracked.data;
+    if (!update || update.events.length === 0) {
       return success(this.enrich(order), 'Nenhuma movimentação nova desde a última consulta.');
     }
 
     const updated = this.applyUpdate(order, update);
     orders.update(updated);
 
-    return success(this.enrich(updated), `Movimentação nova: ${update.event.title}`);
+    return success(this.enrich(updated), updateMessage(update));
   }
 
-  private applyUpdate(order: Order, update: ReturnType<ICarrierTrackingGateway['fetchUpdate']>): Order {
-    if (!update) return order;
-    return { ...order, status: update.status, timeline: [update.event, ...order.timeline] };
+  /** Consulta a transportadora e traduz a falha de rede em Result, sem deixar a excecao vazar. */
+  private async track(order: Order): Promise<Result<TrackingUpdate | null>> {
+    try {
+      return success(await this.deps.tracking.fetchUpdate(order));
+    } catch (error) {
+      if (!(error instanceof CarrierUnavailableError)) throw error;
+      return failure('unavailable', `${order.carrier} não respondeu.`, [error.message]);
+    }
+  }
+
+  /**
+   * Acrescenta os eventos novos. O marcador "aguardando primeira consulta" (rawCode LOCAL) sai
+   * assim que a transportadora devolve historico: ele e mais novo que os eventos reais e
+   * ficaria fora de ordem na linha do tempo.
+   */
+  private applyUpdate(order: Order, update: TrackingUpdate | null): Order {
+    if (!update || update.events.length === 0) return order;
+    const previous = order.timeline.filter((e) => e.rawCode !== 'LOCAL');
+    return { ...order, status: update.status, timeline: [...update.events, ...previous] };
   }
 
   /** So avisa o cliente final das anomalias cujo gatilho (RF05) esta ligado. */
@@ -139,4 +162,23 @@ export class OrdersService {
       `Nenhuma encomenda com o código ${code}.`,
     ]);
   }
+}
+
+function createdMessage(carrier: Carrier, first: Result<TrackingUpdate | null>): string {
+  const base = `Pedido cadastrado · ${carrier} identificada`;
+  if (!first.ok) return `${base} · ${carrier} fora do ar, nova consulta mais tarde`;
+  if (!first.data || first.data.events.length === 0) {
+    return `${base} · ainda sem movimentação na transportadora`;
+  }
+  const n = first.data.events.length;
+  return `${base} · ${eventCount(n)} ${n === 1 ? 'importada' : 'importadas'}`;
+}
+
+function updateMessage(update: TrackingUpdate): string {
+  if (update.events.length === 1) return `Movimentação nova: ${update.events[0].title}`;
+  return `${eventCount(update.events.length)} novas · última: ${update.events[0].title}`;
+}
+
+function eventCount(n: number): string {
+  return n === 1 ? '1 movimentação' : `${n} movimentações`;
 }

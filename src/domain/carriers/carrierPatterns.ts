@@ -11,4 +11,5 @@ export const CARRIER_PATTERNS: readonly CarrierPattern[] = [
   { carrier: 'Jadlog', pattern: /^\d{14}$/, hint: '14 dígitos' },
   { carrier: 'Loggi', pattern: /^LG\d{10}$/, hint: 'Prefixo LG + 10 dígitos' },
   { carrier: 'Total Express', pattern: /^TE\d{12}$/, hint: 'Prefixo TE + 12 dígitos' },
+  { carrier: 'Shopee Xpress', pattern: /^BR\d{12}[A-Z]$/, hint: 'BR + 12 dígitos + letra' },
 ];
